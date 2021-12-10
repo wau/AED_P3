@@ -2,11 +2,11 @@ import java.util.Random;
 
 public class Treap<Key extends Comparable<Key>,Value> {
 
-    int size;
+    private int size;
     private Node root;
+    protected Random r;
 
-    private class Node
-    {
+    private class Node {
         private Key key;
         private Value value;
         private Node left;
@@ -20,21 +20,18 @@ public class Treap<Key extends Comparable<Key>,Value> {
             this.size = size;
         }
     }
-
-
     public Treap() {
         this.size = 0;
+        this.r = new Random();
 
     }
-
     public Treap(Random r) {
         this.size = 0;
-
+        this.r = r;
     }
     public int size() {
         return size;
     }
-
     ////
     public boolean containsKey(Key k) {
         return containsH(this.root, k);
@@ -52,24 +49,22 @@ public class Treap<Key extends Comparable<Key>,Value> {
     public Value get(Key k) {
         return getH(this.root, k);
     }
-    private Value getH(Node n, Key k)
-    {
+    private Value getH(Node n, Key k) {
         if(n == null) return null;
         int cmp = k.compareTo(n.key);
         if (cmp < 0) return getH(n.left,k);
         else if(cmp > 0) return getH(n.right,k);
         else return n.value;
     }
+
+    public void put(Key k, , Value v) {
+
+    }
     ///
-
-
-
-
-
     public static void main(String[] args) {
         Treap<Integer, Integer> treap = new Treap<>();
 
-        treap.containsKey(20);
+        //treap.containsKey(20);
     }
 
 }
