@@ -1,3 +1,5 @@
+package aed.tables;
+
 import java.util.Random;
 
 public class Treap<Key extends Comparable<Key>,Value> {
@@ -15,6 +17,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         private Node left;
         private Node right;
         private int priority;
+        private int size;
 
         public Node(Key k, Value v) {
             this.key = k;
@@ -25,6 +28,13 @@ public class Treap<Key extends Comparable<Key>,Value> {
             this.right = null;
         }
 
+        public Node(Key k, Value v, int size, int priority)
+        {
+            this.key = k;
+            this.value = v;
+            this.priority = priority;
+        }
+
         public Node(Key k, Value v, int customPriority) {
             this.key = k;
             this.value = v;
@@ -33,6 +43,19 @@ public class Treap<Key extends Comparable<Key>,Value> {
             this.left = null;
             this.right = null;
         }
+
+        int getSize() {
+            int r = 0;
+            if (this.left != null) r++;
+            if (this.right != null) r++;
+            return r;
+        }
+
+        public String toString()
+        {
+            return "[k:" + this.key + " v:" + this.value + " p:" + this.priority + " s:" + this.getSize() + "]";
+        }
+
         public boolean isLeaf() { return this.left == null && this.right == null; }
 
         public boolean hasNoNulls() { return this.left != null && this.right != null; }
@@ -117,16 +140,18 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
         if (n == null) { this.size++; return new Node(k, v, priority); }
 
-        int cmp = k.compareTo(n.key);
-        if (cmp > 0) {
+        int cmpr = k.compareTo(n.key);
+        if (cmpr > 0) {
             n.right = putH(n.right, k, v, priority);
             if (n.right.priority > n.priority)
                 n = rotateLeft(n);
-        }else if (cmp < 0) {
+        }
+        else if (cmpr < 0) {
             n.left = putH(n.left, k, v, priority);
             if (n.left.priority > n.priority)
                 n = rotateRight(n);
-        } else  {
+        }
+        else  {
             n.value = v;
         }
         return n;
@@ -145,6 +170,21 @@ public class Treap<Key extends Comparable<Key>,Value> {
             return min;
         }
         return null;
+    }
+
+
+    Treap shallowCopy() {
+        public UnrolledLinkedList<T> shallowCopy() {
+            UnrolledLinkedList<T> newList = new UnrolledLinkedList<T>(this.blockSize);
+
+            newList.first = this.first.shallowCopy();
+            newList.nNodes = this.nNodes;
+            newList.blockSize = this.blockSize;
+
+
+            return newList;
+        }
+
     }
   /*  public Key max() {
 
@@ -204,56 +244,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
      //   while ()
     }
 
-    public Node deleteH(Node n, Key k, Node father, int where) {
-        //public Node deleteH(Node n, Key k, Node nFather) {
-
-        printTreap(this.root, 0, n);
-        System.out.println();
-        System.out.println();
-
-        if(n == null) return n;
-        int cmp = k.compareTo(n.key);
-        if (cmp < 0) n.left = deleteH(n.left,k, n, LEFT);
-        else if(cmp > 0) n.right = deleteH(n.right, k, n, RIGHT);
-        else {
-
-            if (n.isLeaf()) {
-                /*n = null;
-
-                if (where == RIGHT && father.right != null)
-                    father.right = null;
-                else if (where == LEFT && father.left != null)
-                    father.left = null;*/
-                return n;
-            }
-
-            n.priority = Integer.MIN_VALUE;
-
-            if (n.hasNoNulls()) {
-                if (n.right.priority > n.left.priority) {//right up
-                    n = rotateLeft(n);
-                    n.left = deleteH(n.left, k, n, LEFT);
-                }
-                else {
-                    n = rotateRight(n);
-                    n.right = deleteH(n.right, k, n, RIGHT);
-                }
-            }
-            else  {
-                if (n.right != null) {
-                    n = rotateLeft(n);
-                    n.left = deleteH(n.left, k, n, LEFT);
-                }
-                else if (n.left != null) {
-                    n = rotateRight(n);
-                    n.right = deleteH(n.right, k, n, RIGHT);
-
-                }
-            }
-        }
-        return null;
-    }
-
 
     private Node deleteRec(Key key, Node current) {
 
@@ -301,9 +291,9 @@ public class Treap<Key extends Comparable<Key>,Value> {
     }
 
 
-   /* public void deleteH(Node n, Key k, Node father, int where) {
-    //public Node deleteH(Node n, Key k, Node nFather) {
 
+
+   /* public void deleteH(Node n, Key k, Node father, int where) {
         printTreap(this.root, 0, n);
         System.out.println();
         System.out.println();
@@ -349,6 +339,77 @@ public class Treap<Key extends Comparable<Key>,Value> {
             };
         }
     }*/
+
+
+    //helper method that uses the treap to build an array with a heap structure
+    private void fillHeapArray(Node n, Object[] a, int position)
+    {
+        if(n == null) return;
+
+        if(position < a.length)
+        {
+            a[position] = n;
+            fillHeapArray(n.left,a,2*position);
+            fillHeapArray(n.right,a,2*position+1);
+        }
+    }
+
+    //if you want to use a different organization that a set of nodes with pointers, you can do it, but you will have to change
+    //this method to be consistent with your implementation
+    private Object[] getHeapArray()
+    {
+        //we only store the first 31 elements (position 0 is not used, so we need a size of 32), to print the first 5 rows of the treap
+        Object[] a = new Object[32];
+        fillHeapArray(this.root,a,1);
+        return a;
+    }
+
+    private void printCentered(String line)
+    {
+        //assuming 120 characters width for a line
+        int padding = (120 - line.length())/2;
+        if(padding < 0) padding = 0;
+        String paddingString = "";
+        for(int i = 0; i < padding; i++)
+        {
+            paddingString +=" ";
+        }
+
+        System.out.println(paddingString + line);
+    }
+
+    //this is used by some of the automatic tests in Mooshak. It is used to print the first 5 levels of a Treap.
+    //feel free to use it for your own tests
+    public void printTreapBeginning() {
+        Object[] heap = getHeapArray();
+        int size = size();
+        int printedNodes = 0;
+        String nodeToPrint;
+        int i = 1;
+        int nodes;
+        String line;
+
+        //only prints the first five levels
+        for (int depth = 0; depth < 5; depth++) {
+            //number of nodes to print at a particular depth
+            nodes = (int) Math.pow(2, depth);
+            line = "";
+            for (int j = 0; j < nodes && i < heap.length; j++) {
+                if (heap[i] != null) {
+                    nodeToPrint = heap[i].toString();
+                    printedNodes++;
+                } else {
+                    nodeToPrint = "[null]";
+                }
+                line += " " + nodeToPrint;
+                i++;
+            }
+
+            printCentered(line);
+            if (i >= heap.length || printedNodes >= size) break;
+        }
+    }//helper method that uses the treap to build an array with a heap structure
+
 
     public void printTreap(Node root, int space, Node where) {
 
@@ -410,6 +471,8 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
 
         treap.printTreap(treap.root, 0, treap.root);
+
+        treap.printTreapBeginning();
 
 
 
