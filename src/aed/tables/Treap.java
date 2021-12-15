@@ -1,10 +1,5 @@
 package aed.tables;
-
-
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.PriorityQueue;
-import java.util.Random;
+import java.util.*;
 
 public class Treap<Key extends Comparable<Key>,Value> {
 
@@ -24,6 +19,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
 
 
+        @SuppressWarnings("unchecked")
         public Iterator<T> iterator() {
             return new MinPriorityQueueIterator();
         }
@@ -33,9 +29,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
             MinPriorityQueueIterator() {
                 this.copy = shallowCopy();
-                //System.out.println(Arrays.toString(this.copy.getElements()));
             }
-
 
             @Override
             public boolean hasNext() {
@@ -362,6 +356,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         @SuppressWarnings("unchecked")
         public void insert(T element)
         {
+
             if (!isEmpty()) {
                 NodePlusIndex v = completeSearch(element);
 
@@ -387,6 +382,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         public T removeMin()
         {
             T result = null;
@@ -421,9 +417,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
     }
 
-    MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
-
-
     private class Node {
         private Key key;
         private Value value;
@@ -447,7 +440,8 @@ public class Treap<Key extends Comparable<Key>,Value> {
             this.value = v;
             this.priority = priority;
 
-            this.size = 1;
+           // this.size = 1;
+            this.size = size;
         }
 
         public Node(Key k, Value v, int customPriority) {
@@ -463,11 +457,9 @@ public class Treap<Key extends Comparable<Key>,Value> {
               size = getSize(left) + getSize(right) + 1;
         }
 
-
-
         public Node shallowCopy() {
-            Node newNode = new Node(this.key, this.value, this.priority);
-            newNode.size = this.size;// this.size();
+            Node newNode = new Node(this.key, this.value, this.size, this.priority);
+            //newNode.size = this.size;// this.size();
 
             if (this.right != null)
                 newNode.right = this.right.shallowCopy();
@@ -483,12 +475,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
             return "[k:" + this.key + " v:" + this.value + " p:" + this.priority + " s:" + this.size + "]";
         }
 
-        public boolean isLeaf() { return this.left == null && this.right == null; }
-
         public boolean hasNoNulls() { return this.left != null && this.right != null; }
-
-        public boolean getNotNull() { return (this.left != null) ? true : false; } // left != null: true, right != null: false
-                                                                                    // rotateright, rotateleft
     }
     public Treap() {
         this.size = 0;
@@ -507,12 +494,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
         return (root != null) ? root.size : 0;
     }
 
-    /*private void updateSize(Node n) {
-        if (n != null)  n.size = getSize(n.left) + getSize(n.right)+ 1;
-    }*/
-
-
-    ////
     public boolean containsKey(Key k) {
         return containsH(this.root, k);
     }
@@ -524,7 +505,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         else if(cmp > 0) return containsH(n.right,k);
         else return true;
     }
-    ////
+
 
     public Value get(Key k) {
         return getH(this.root, k);
@@ -537,6 +518,27 @@ public class Treap<Key extends Comparable<Key>,Value> {
         else return n.value;
     }
 
+    public int getPr(Key k) {
+        return getPrH(this.root, k);
+    }
+    private Integer getPrH(Node n, Key k) {
+        if(n == null) return null;
+        int cmp = k.compareTo(n.key);
+        if (cmp < 0) return getPrH(n.left,k);
+        else if(cmp > 0) return getPrH(n.right,k);
+        else return n.priority;
+    }
+
+    public Node getNode(Key k) {
+        return getNodeH(this.root, k);
+    }
+    private Node getNodeH(Node n, Key k) {
+        if(n == null) return null;
+        int cmp = k.compareTo(n.key);
+        if (cmp < 0) return getNodeH(n.left,k);
+        else if(cmp > 0) return getNodeH(n.right,k);
+        else return n;
+    }
 
     private Node rotateLeft(Node root) {
         Node newR = root.right;
@@ -562,10 +564,8 @@ public class Treap<Key extends Comparable<Key>,Value> {
         root.update();
         newR.update();
 
-
         return newR;
     }
-
 
     public void put(Key k, Value v) {
         this.root = putH(this.root, k, v, r.nextInt());
@@ -582,10 +582,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         System.out.println();
         System.out.println();*/
 
-        if (n == null) { return new Node(k, v, 1, priority);}
-
-
-      //  updateSize(n);
+        if (n == null) { /*pqK.insert(k);*/ return new Node(k, v, 1, priority);}
 
         int cmpr = k.compareTo(n.key);
         if (cmpr > 0) {
@@ -622,6 +619,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         return null;
     }
     public void deleteMin() {
+        //TODO: better approach
         //deleteMinH(this.root, null);
         delete(min());
     }
@@ -641,62 +639,23 @@ public class Treap<Key extends Comparable<Key>,Value> {
     public Treap<Key, Value> shallowCopy() {
         Treap<Key, Value> newTreap = new Treap<Key, Value>(this.r);
 
-        newTreap.root = this.root.shallowCopy();
-        newTreap.size = size();
+        if (this.root != null)
+            newTreap.root = this.root.shallowCopy();
 
         return newTreap;
 
     }
-  /*  public Key max() {
-
-    }
-
-    public void deleteMax() {
-
-    }
-
-   */
-   /* public void deleteMin() {
-        if (size > 0) {
-            Node n = this.root;
-            Node father = null;
-            Key min = n.key;
-
-            while (n.left != null) {
-                father = n;
-                n = n.left;
-            }
-            //go to last node
-            if (size == 1) {
-
-            }
-            else {
-
-            }
-            father.left = null;
-            n = null;
-        }
-    }*/
-
-
 
     public void delete(Key k) {
 
 //        this.root = deleteH(this.root, k, null, -1);
-
         this.root = deleteH(k, this.root);
 
-      //  this.root = removeH(k, this.root);
-        //tem que atualizar a root sempre.
-
-
-     //   while ()
     }
 
 
     private Node deleteH(Key key, Node current) {
         if (current == null) return null;
-
         /*
         printTreap(this.root, 0, current);
         System.out.println();
@@ -716,25 +675,27 @@ public class Treap<Key extends Comparable<Key>,Value> {
             current.priority = Integer.MIN_VALUE;
 
             if (current.hasNoNulls()) {
-                Node nRoot;
                 if (current.left.priority > current.right.priority) {
-                    nRoot = current.left;
-                    rotateRight(current);
-                    nRoot.right = deleteH(key, current.right);
+                    current = rotateRight(current);
+                    current.right = deleteH(key, current.right);
                 }
                 else {
-                    nRoot = current.right;
-                    rotateLeft(current);
-                    nRoot.left = deleteH(key, current.left);
+                    current = rotateLeft(current);
+                    current.left = deleteH(key, current.left);
                 }
-                nRoot.update();
-                return nRoot;
             }
-            else if (current.left != null) { current.left.update(); return current.left; }
-            else if (current.right != null) { current.right.update(); return current.right; }
-            else { this.size--; return null; }//is a leaf
+            else {
+                if (current.right == null) {current = current.left;}
+                else if (current.left == null) {current = current.right;}
+            }
+            //else if (current.left != null) { current.left.update(); return current.left; }
+            //else if (current.right != null) { current.right.update(); return current.right; }
+           // else {  return null; }//is a leaf
         }
-        current.update();
+        //current.update();
+       // pq.removeMin();
+        //assert current != null;
+        if (current != null) current.update();
         return current;
     }
 
@@ -801,9 +762,23 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
 
 
+    @SuppressWarnings("unchecked")
     public Treap[] split(Key k) {
-        return null;
+        Treap<Key, Value>[] treaps = (Treap<Key, Value>[]) new Treap[2];
+
+        put(k, null, Integer.MAX_VALUE);
+
+        treaps[0] = new Treap<Key, Value>();
+
+        treaps[1] = new Treap<Key, Value>();
+
+        treaps[0].root = this.root.left.shallowCopy();
+
+        treaps[1].root = this.root.right.shallowCopy();
+
+        return treaps;
     }
+
 
     public Key max() {
         return maxH(this.root);
@@ -838,13 +813,32 @@ public class Treap<Key extends Comparable<Key>,Value> {
         }
     }
 
+    public int rankH(Node n, Key k) {
+        if (n != null) {
+            if (k.compareTo(n.key) < 0) {
+                return rankH(n.left, k);
+            }
+            else if (k.compareTo(n.key) == 0) {
+                return getSize(n.left);
+            }
+            else {
+                return getSize(n.left)+1+rankH(n.right, k);
+            }
+        }
+        else return 0;
+    }
+
     public int rank(Key k ){
-        return 0;
+
+        return rankH(this.root, k);
+
     }
 
     public int size(Key min, Key max) {
-        return 0;
 
+        Node nMax = getNode(max);
+        Node nMin = getNode(min);
+        return size()-(getSize(nMin.left) + getSize(nMax.right) );
     }
 
     public Key select(int n) {
@@ -852,19 +846,56 @@ public class Treap<Key extends Comparable<Key>,Value> {
     }
 
     public Iterable<Key> keys(Key min, Key max) {
-        return null;
-    }
-
-    public Iterable<Key> keys() {
+        MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
+        keysH(root, min, max, pq);
         return pq;
     }
 
+    private void keysH(Node n, Key min, Key max, MinPriorityQueue<Key> res) {
+        if (n == null)
+            return;
+        if (n.key.compareTo(max) > 0)
+            keysH(n.left, min, max, res);
+        if (min.compareTo(n.key) <= 0 && n.key.compareTo(max) <= 0) {
+            res.insert(n.key);
+            keysH(n.left, min, max, res);
+            keysH(n.right, min, max, res);
+        }
+        if (n.key.compareTo(min) < 0)
+            keysH(n.right, min, max, res);
+    }
+
+    private void keysH(Node n, MinPriorityQueue<Key> res) {
+        if (n == null)
+            return;
+        else {
+            res.insert(n.key);
+            keysH(n.left,res);
+            keysH(n.right,res);
+        }
+    }
+
+    public Iterable<Key> keys() {
+        MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
+        keysH(root, pq);
+        return pq;
+    }
+
+
     public Iterable<Integer> priorities() {
-        return null;
+        Stack<Integer> stack = new Stack<Integer>();
+        for (Key k: keys())
+            stack.push(getPr(k));
+
+        return stack;
     }
 
     public Iterable<Value> values() {
-        return null;
+        Stack<Value> stack = new Stack<Value>();
+        for (Key k: keys())
+            stack.push(get(k));
+
+        return stack;
     }
 
     //if you want to use a different organization that a set of nodes with pointers, you can do it, but you will have to change
@@ -923,7 +954,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
         }
     }//helper method that uses the treap to build an array with a heap structure
 
-
     public void printTreap(Node root, int space, Node where) {
 
         final int height = 15;
@@ -959,47 +989,35 @@ public class Treap<Key extends Comparable<Key>,Value> {
         treap.put(25, 0);
 
         treap.put(15, 0);
-        treap.put(15, 0);
+
+        treap.put(70, 1);
+        treap.put(-2, 0);
+        treap.put(-10, 0);
 
 
 
         //treap.printTreap(treap.root, 0, treap.root);
         treap.printTreapBeginning();
 
-
-//       treap.deleteMax();
+        treap.delete(-10);
 
         System.out.println();
         System.out.println();
         System.out.println();
-        System.out.println(treap.get(30));
+
+        treap.printTreapBeginning();
+
+        Treap[] treaps = treap.split(8);
+
+        treaps[0].printTreapBeginning();
 
 
 
+        //   System.out.println(treap.get(30));
 
-        treap.pq.insert(20);
-        treap.pq.insert(-1);
-        treap.pq.insert(30);
-        treap.pq.insert(5);
-        treap.pq.insert(-70);
-
-    //    System.out.println(treap.pq);
-
-        for (Integer k: treap.keys()) {
-            System.out.println(k);
-        }
-
-
-
-
-      /*  treap.delete(700);
-        treap.delete(-35);
-        treap.delete(-2);
-        treap.delete(850);*/
-
-       // treap.printTreapBeginning();
-
-        //treap.printTreap(treap.root, 0, treap.root);
+       // System.out.println(treap.rank(15));
+       // System.out.println("size:");
+       // System.out.println(treap.size(-2, 30));
 
         Treap<Integer, Integer> copy = treap.shallowCopy();
 
