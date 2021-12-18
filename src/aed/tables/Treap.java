@@ -751,7 +751,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
     private void fillHeapArray(Node n, Object[] a, int position)
     {
         if(n == null) return;
-
         if(position < a.length)
         {
             a[position] = n;
@@ -759,7 +758,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
             fillHeapArray(n.right,a,2*position+1);
         }
     }
-
 
 
     @SuppressWarnings("unchecked")
@@ -836,14 +834,53 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
     public int size(Key min, Key max) {
 
-        Node nMax = getNode(max);
+        /*Node nMax = getNode(max);
         Node nMin = getNode(min);
-        return size()-(getSize(nMin.left) + getSize(nMax.right) );
+
+
+        return size()-(getSize(nMin.left) + getSize(nMax.right) );*/
+
+        int result = 0;
+
+        Node current1 = this.root;
+        Node current2 = this.root;
+
+        while (current1 != null) {
+            if (current1.key.compareTo(min) >= 0 && current2.key.compareTo(max) <= 0)
+                result++;
+
+        }
+    }
+
+    private int count(Key min, Key max) {
+
     }
 
     public Key select(int n) {
-        return null;
+       Treap<Key, Value> copy = new Treap<>();
+
+        copy = shallowCopy();
+
+        for (int i = 0; i < n; i++) {
+            copy.deleteMin();
+        }
+        return copy.min();
+        //int skipped = 0;
     }
+
+   /* private Key selectH(Node current, int n, int skipped) {
+        if (n < getSize(current.left)+skipped) {
+            skipped += getSize(current.right);
+            return selectH(current.left, n, skipped);
+        }
+        else if (n > getSize(current.left)+skipped) {
+            skipped += getSize(current.left);
+            return selectH(current.right, n, skipped);
+        }
+        else {
+            return current.key;
+        }
+    }*/
 
     public Iterable<Key> keys(Key min, Key max) {
         MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
@@ -955,7 +992,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
     }//helper method that uses the treap to build an array with a heap structure
 
     public void printTreap(Node root, int space, Node where) {
-
         final int height = 15;
 
         if (root == null) {
@@ -999,17 +1035,19 @@ public class Treap<Key extends Comparable<Key>,Value> {
         //treap.printTreap(treap.root, 0, treap.root);
         treap.printTreapBeginning();
 
-        treap.delete(-10);
+      //  treap.delete(-10);
 
         System.out.println();
         System.out.println();
         System.out.println();
 
-        treap.printTreapBeginning();
+        System.out.println(treap.select(18));
+
+        /*treap.printTreapBeginning();
 
         Treap[] treaps = treap.split(8);
 
-        treaps[0].printTreapBeginning();
+        treaps[0].printTreapBeginning();*/
 
 
 
@@ -1017,7 +1055,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
        // System.out.println(treap.rank(15));
        // System.out.println("size:");
-       // System.out.println(treap.size(-2, 30));
+        System.out.println(treap.size(80, 90));
 
         Treap<Integer, Integer> copy = treap.shallowCopy();
 
