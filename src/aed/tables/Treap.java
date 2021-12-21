@@ -62,6 +62,9 @@ public class Treap<Key extends Comparable<Key>,Value> {
                 return this.counter;
             }
 
+
+
+
             public T getItem(int idx) {
 
                 return this.items[idx];
@@ -470,6 +473,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
             return newNode;
         }
 
+
         public String toString()
         {
             return "[k:" + this.key + " v:" + this.value + " p:" + this.priority + " s:" + this.size + "]";
@@ -599,6 +603,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         }
         else  {
             n.value = v;
+            n.priority = priority;
         }
         n.update();
         return n;
@@ -621,18 +626,37 @@ public class Treap<Key extends Comparable<Key>,Value> {
     public void deleteMin() {
         //TODO: better approach
         //deleteMinH(this.root, null);
-        delete(min());
+      //  delete(min());
+        if (this.root != null)
+            this.root = deleteMinH(this.root, null);
     }
 
-    public void deleteMinH(Node n, Node father) {
-        if (n.left != null)
+    public Node deleteMinH(Node n, Node father) {
+        /*if (n.left != null)
             deleteMinH(n.left, n);
         else {
             n = null;
             if (father != null)  {father.left = null; father.update();}
             else { root = root.right; root.update();}
-        }
+        }*/
 
+        if (n.left != null)
+            n.left = deleteMinH(n.left, n);
+        else {
+            if (n.right != null) {
+               n = n.right;
+               n.update();
+               return n;
+            }
+            else {
+                //father.left = null
+                n = null;
+             //   father.update();
+                return null;
+            }
+        }
+        n.update();
+        return n;
     }
 
 
@@ -770,9 +794,9 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
         treaps[1] = new Treap<Key, Value>();
 
-        treaps[0].root = this.root.left.shallowCopy();
+        treaps[0].root = this.root.left;//.shallowCopy();
 
-        treaps[1].root = this.root.right.shallowCopy();
+        treaps[1].root = this.root.right;//.shallowCopy();
 
         return treaps;
     }
@@ -790,25 +814,37 @@ public class Treap<Key extends Comparable<Key>,Value> {
             else return maxH(root.right);
         }
     }
-
-
     public void deleteMax() {
        /* if (this.root != null) {
             deleteMaxH(this.root, null);
             this.root.update();
 
         }*/
-        delete(max());
+       // delete(max());
+        if (this.root != null)
+            this.root = deleteMaxH(this.root, null);
     }
 
-    public void deleteMaxH(Node n, Node father) {
+
+    public Node deleteMaxH(Node n, Node father) {
+
         if (n.right != null)
-            deleteMaxH(n.right, n);
+            n.right = deleteMaxH(n.right, n);
         else {
-            n = null;
-            if (father != null)  {father.right = null; father.update();}
-            else {root = root.right; root.update();}
+            if (n.left != null) {
+                n = n.left;
+                n.update();
+                return n;
+            }
+            else {
+                //father.left = null
+                n = null;
+                //   father.update();
+                return null;
+            }
         }
+        n.update();
+        return n;
     }
 
     public int rankH(Node n, Key k) {
@@ -833,27 +869,40 @@ public class Treap<Key extends Comparable<Key>,Value> {
     }
 
     public int size(Key min, Key max) {
-
         /*Node nMax = getNode(max);
         Node nMin = getNode(min);
 
-
         return size()-(getSize(nMin.left) + getSize(nMax.right) );*/
 
-        int result = 0;
-
-        Node current1 = this.root;
-        Node current2 = this.root;
-
-        while (current1 != null) {
-            if (current1.key.compareTo(min) >= 0 && current2.key.compareTo(max) <= 0)
-                result++;
-
-        }
+        int counter = 0;
+        counter = count(this.root, min, max, counter);
+        return  counter;
     }
 
-    private int count(Key min, Key max) {
+    private int count(Node n, Key min, Key max, int counter) {
 
+        if (n == null)
+            return 0;
+        if (n !=null) {
+            if (n.key.compareTo(min) >= 0 && n.key.compareTo(max) <= 0) {
+                int oldc = counter;
+                counter++;
+                //count(n.right, min, max, counter);
+                //count(n.left, min, max, counter);
+               // return counter;
+                return -oldc + count(n.right, min, max, counter) + count(n.left, min, max, counter);
+            }
+            else if (n.key.compareTo(max) > 0)
+                return count(n.left, min, max, counter);
+            else if (n.key.compareTo(min) < 0)
+                return count(n.right, min, max, counter);
+
+            return counter;
+        }
+       // else {
+
+     //   }
+        return 0;
     }
 
     public Key select(int n) {
@@ -883,9 +932,21 @@ public class Treap<Key extends Comparable<Key>,Value> {
     }*/
 
     public Iterable<Key> keys(Key min, Key max) {
-        MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
+        /*MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
         keysH(root, min, max, pq);
-        return pq;
+        return pq;*/
+        //inOrder(this.root);
+        return null;
+    }
+
+    public void inOrder(Node n) {
+        if (n == null)
+            return;
+
+        inOrder(n.left);
+        System.out.println(n.key);
+        inOrder(n.right);
+
     }
 
     private void keysH(Node n, Key min, Key max, MinPriorityQueue<Key> res) {
@@ -1019,6 +1080,8 @@ public class Treap<Key extends Comparable<Key>,Value> {
         Treap<Integer, Integer> treap = new Treap<>();
 
         treap.put(0, 20);
+        treap.put(1, 20);
+
         treap.put(30, 10);
         treap.put(-1, 0);
         treap.put(-30, 0);
@@ -1035,27 +1098,30 @@ public class Treap<Key extends Comparable<Key>,Value> {
         //treap.printTreap(treap.root, 0, treap.root);
         treap.printTreapBeginning();
 
-      //  treap.delete(-10);
+        //treap.deleteMin();
+     //   treap.deleteMax();
 
         System.out.println();
         System.out.println();
         System.out.println();
 
-        System.out.println(treap.select(18));
 
-        /*treap.printTreapBeginning();
+//        System.out.println(treap.select(18));
 
-        Treap[] treaps = treap.split(8);
 
-        treaps[0].printTreapBeginning();*/
+  //      Treap[] treaps = treap.split(25);
+
+//        treaps[0].printTreapBeginning();
 
 
 
         //   System.out.println(treap.get(30));
 
        // System.out.println(treap.rank(15));
-       // System.out.println("size:");
-        System.out.println(treap.size(80, 90));
+        System.out.println("size:");
+        //System.out.println(treap.size(-31, 30));
+
+        treap.inOrder(treap.root);
 
         Treap<Integer, Integer> copy = treap.shallowCopy();
 
