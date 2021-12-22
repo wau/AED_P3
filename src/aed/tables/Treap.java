@@ -10,415 +10,11 @@ public class Treap<Key extends Comparable<Key>,Value> {
     private Node root;
     protected Random r;
 
-    public class MinPriorityQueue<T extends Comparable<T>> implements Iterable<T>{
+    private int sizeR;
 
-        UnrolledLinkedList<T> list;
-        int qsize;
-        int blockSize = 880;//770
-        private MinPriorityQueue<T> tMinPriorityQueue;
+    private int selectR;
+    private Key selectKey;
 
-
-
-        @SuppressWarnings("unchecked")
-        public Iterator<T> iterator() {
-            return new MinPriorityQueueIterator();
-        }
-
-        private class MinPriorityQueueIterator implements Iterator<T>  {
-            MinPriorityQueue<T> copy;
-
-            MinPriorityQueueIterator() {
-                this.copy = shallowCopy();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return !copy.isEmpty();
-            }
-
-            @Override
-            public T next() {
-                return copy.removeMin();
-            }
-
-        }
-
-        public class Node<T> {
-            private T[] items; // elementos do bloco
-            private int counter; // n de elementos do array do bloco
-            private Node next;
-            private int start;
-            private int where2Add;
-            @SuppressWarnings("unchecked")
-            public Node() {
-
-                this.items = (T[]) new Comparable[blockSize];
-                this.counter = 0;
-                this.next = null;
-                this.start = 0;
-                this.where2Add = 0;
-            }
-            public int size() {
-                return this.counter;
-            }
-
-
-
-
-            public T getItem(int idx) {
-
-                return this.items[idx];
-            }
-            public void setItem(int idx, T item) {
-
-                this.items[idx] = item;
-            }
-            public void addInNode(T item) {
-
-                this.items[where2Add] = item;
-                this.where2Add++;
-                this.counter++;
-            }
-            public T removeFirst() {
-                T result = this.items[this.start];
-                this.items[this.start] = null;
-                if (start<blockSize-1)
-                    this.start++;
-                this.counter--;
-                return result;
-            }
-
-
-            public void removeSince(int idx, int startSize) {
-                for (int i = idx; i < startSize; i++) {
-                    this.items[i] = null;
-                    this.counter--;
-                    //   this.where2Add--;
-                }
-            }
-
-            public Node shallowCopy() {
-                Node newNode = new Node();
-
-                for (int i = 0; i < blockSize; i++) {
-                    newNode.items[i] = this.items[i];
-                }
-
-                newNode.counter = this.counter;
-                newNode.start = this.start;
-                newNode.where2Add = this.where2Add;
-
-                if (this.next != null)
-                    newNode.next = this.next.shallowCopy();
-                return newNode;
-            }
-        }
-
-
-
-
-        @SuppressWarnings("unchecked")
-        public class UnrolledLinkedList<T extends Comparable<T>> {
-            private Node first;
-            private Node last;
-            private int nNodes;
-            private int blockSize;
-            public UnrolledLinkedList(int blockSize) {
-                this.first = new Node();
-                this.last = this.first;
-                this.blockSize = blockSize;
-                this.nNodes = 1;
-            }
-
-            ////////////////
-
-
-            public Object[][] getArrayOfBlocks() {
-
-                Object[][] result = (Object[][])new Object[this.nNodes][this.blockSize];
-
-                Node currentnode = this.first;
-                int counter = 0;
-                while (currentnode != null && counter < this.nNodes)
-                {
-                    // for (int i = 0; i < currentnode.size(); i++)
-                    for (int i = 0; i < blockSize; i++)
-                    {
-                        result[counter][i] = currentnode.items[i];
-                    }
-
-                    currentnode = currentnode.next;
-                    counter++;
-                }
-                return result;
-            }
-
-
-            void rightShift(Node start, int startIdx) {
-
-                //    T last = (T) start.items[start.where2Add];
-
-                // shift right
-
-                for( int index =start.where2Add-1; index >= startIdx ; index-- )
-                {
-                    start.items[index+1] = start.items[index];
-
-                    start.items[index] = null;
-                }
-
-            }
-
-
-            public Node middleNode(Node start, int n) {
-
-                int i = 0;
-                while (i < n/2)
-                {
-                    start = start.next;
-                    i++;
-                }
-                return start;
-            }
-            private class rMoveHalf {
-                Node node;
-                int idx;
-
-                rMoveHalf(Node node, int idx) {
-                    this.node = node;
-                    this.idx = idx;
-                }
-            }
-
-            private rMoveHalf moveHalf(Node node, int idx) {
-                Node result;
-                Node newNode = new Node();
-
-                int test = Math.max(node.start, (blockSize / 2));
-
-                for (int i = test; i < blockSize; i++) {
-                    T citem = (T) node.getItem(i);
-                    newNode.addInNode(citem);
-
-                    node.items[i] = null;
-                    node.counter--;
-                }
-
-                //  node.removeSince(test, blockSize);
-                node.where2Add = test;
-
-                Node next = node.next;
-                node.next = newNode;
-
-                newNode.next = next;
-
-
-                this.nNodes++;
-
-                if (idx >= test) {
-                    return new rMoveHalf(node.next, idx - test);
-                }
-                else {
-                    return new rMoveHalf(node, idx);
-                }
-            }
-
-            public UnrolledLinkedList<T> shallowCopy() {
-                UnrolledLinkedList<T> newList = new UnrolledLinkedList<T>(this.blockSize);
-
-                newList.first = this.first.shallowCopy();
-                newList.nNodes = this.nNodes;
-                newList.blockSize = this.blockSize;
-
-
-                return newList;
-            }
-
-
-
-            @SuppressWarnings("unchecked")
-            public void addWithNode(Node currentnode, int idx, T item) {
-                if (currentnode.where2Add >= blockSize) {
-                    rMoveHalf r  = moveHalf(currentnode, idx);
-                    rightShift(r.node, r.idx); // right shift first
-                    r.node.setItem(r.idx, item);
-                    r.node.counter++;
-                    r.node.where2Add++;
-
-                } else {
-                    rightShift(currentnode, idx); // right sh
-                    currentnode.setItem(idx, item);
-                    currentnode.counter++;
-                    currentnode.where2Add++;
-                }
-            }
-        }
-        public MinPriorityQueue()
-        {
-            this.list = new UnrolledLinkedList<T>(blockSize);
-            //    this.list.first = null;
-            this.qsize = 0;
-            //TODO: implement
-        }
-
-
-        private class NodePlusIndex {
-            private Node node;
-            private int idx;
-            private boolean has0or1element;
-
-            NodePlusIndex(Node node, int idx, boolean has0or1element) {
-                this.node = node;
-                this.idx = idx;
-                this.has0or1element = has0or1element;
-            }
-
-        }
-
-        public <T extends Comparable<T>> int binarySearch(T[] arr, int low, int high, T item)
-        {
-            int mid = low + (high - low) / 2;
-
-            if (high >= low) {
-
-                int cmp = arr[mid].compareTo(item);
-
-                if (cmp >= 0)
-                    return binarySearch(arr, low, mid - 1, item);
-
-                // if (cmp < 0)
-                return binarySearch(arr, mid + 1, high, item);
-            }
-            return mid;
-        }
-
-        @SuppressWarnings("unchecked")
-        public NodePlusIndex completeSearch(T item)
-        {
-            Node currentnode = list.first;
-            Node prev = list.first;
-
-            while (currentnode != null)
-            {
-                int cmpFirst = item.compareTo((T) currentnode.items[currentnode.start]);
-                int cmpLast =  item.compareTo((T) currentnode.items[currentnode.where2Add-1]);
-
-                boolean canCompare = currentnode.size() > 1;
-
-                if ((canCompare && cmpFirst >= 0 && cmpLast <= 0) || (currentnode.where2Add < blockSize && cmpFirst <= 0) || (currentnode.where2Add < blockSize && cmpLast >= 0 && currentnode.next == null)) {
-                    return new NodePlusIndex(currentnode, binarySearch((T[]) currentnode.items, currentnode.start, currentnode.where2Add-1, item), false);
-                }
-                else{
-                    prev = currentnode;
-                    currentnode = currentnode.next;
-                }
-            }
-
-            Node newNode = new Node();
-            this.list.nNodes++;
-            prev.next = newNode;
-
-            return new NodePlusIndex(newNode, binarySearch((T[]) newNode.items, newNode.start, newNode.where2Add-1, item), true);
-        }
-
-        //needed for testing purposes only
-        public Object[] getElements() {
-
-            Object[] result = new Object[qsize];
-            int r = 0;
-
-            Node currentnode = this.list.first;
-
-            int counter = 0;
-
-            while (currentnode != null && counter < this.list.nNodes)
-            {
-                // for (int i = 0; i < currentnode.size(); i++)
-                for (int i = currentnode.start; i < currentnode.where2Add; i++)
-                {
-                    result[r++] = currentnode.items[i];
-                }
-
-                currentnode = currentnode.next;
-                counter++;
-            }
-            return result;
-        }
-
-        public MinPriorityQueue<T> shallowCopy()
-        {
-            MinPriorityQueue<T> pQueue = new MinPriorityQueue<T>();
-            pQueue.list = this.list.shallowCopy();
-
-            pQueue.blockSize = this.list.blockSize;
-            pQueue.qsize = this.qsize;
-
-            return pQueue;
-        }
-
-        @SuppressWarnings("unchecked")
-        public void insert(T element)
-        {
-
-            if (!isEmpty()) {
-                NodePlusIndex v = completeSearch(element);
-
-                if (v.has0or1element) {
-                    v.node.addInNode(element);
-                }
-                else
-                    this.list.addWithNode(v.node, v.idx, element);
-            }
-            else
-                this.list.addWithNode(this.list.first, 0, element);
-
-            this.qsize++;
-        }
-
-        @SuppressWarnings("unchecked")
-        public T peekMin()
-        {
-            if (!isEmpty()) {
-
-                return (T)this.list.first.items[this.list.first.start];
-            }
-            return null;
-        }
-
-        @SuppressWarnings("unchecked")
-        public T removeMin()
-        {
-            T result = null;
-            if (!isEmpty()) {
-
-                result = (T) this.list.first.removeFirst();
-                if (this.list.nNodes > 1 && this.list.first.counter <= 0) {
-                    this.list.first = this.list.first.next;
-                    this.list.nNodes--;
-                }
-                else if (this.list.nNodes == 1 && this.list.first.counter <= 0) {
-                    this.list.first = new Node(); // re initialize
-                }
-
-                qsize--;
-            }
-            return result;
-        }
-
-        public boolean isEmpty()
-        {
-            //TODO: implement
-            //  return true;
-            return qsize == 0;
-        }
-
-        public int size()
-        {
-            //TODO: implement
-            return qsize;
-        }
-
-    }
 
     private class Node {
         private Key key;
@@ -556,8 +152,6 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
         return newR;
     }
-
-
 
     private Node rotateRight(Node root) {
         Node newR = root.left;
@@ -744,7 +338,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
                 return;
             }
 
-            n.priority = Integer.MIN_VALUE; 
+            n.priority = Integer.MIN_VALUE;
 
             if (n.hasNoNulls()) {
                 if (n.right.priority > n.left.priority) {//right up
@@ -869,66 +463,85 @@ public class Treap<Key extends Comparable<Key>,Value> {
     }
 
     public int size(Key min, Key max) {
-        /*Node nMax = getNode(max);
-        Node nMin = getNode(min);
-
-        return size()-(getSize(nMin.left) + getSize(nMax.right) );*/
-
-        int counter = 0;
-        counter = count(this.root, min, max, counter);
-        return  counter;
+        sizeR = 0;
+        sizeH(this.root, min, max);
+        return sizeR;
     }
 
-    private int count(Node n, Key min, Key max, int counter) {
+    private void sizeH(Node n, Key min, Key max) {
 
-        if (n == null)
-            return 0;
         if (n !=null) {
             if (n.key.compareTo(min) >= 0 && n.key.compareTo(max) <= 0) {
-                int oldc = counter;
-                counter++;
-                //count(n.right, min, max, counter);
-                //count(n.left, min, max, counter);
-               // return counter;
-                return -oldc + count(n.right, min, max, counter) + count(n.left, min, max, counter);
+                sizeR++;
+
+                sizeH(n.left, min, max);
+                sizeH(n.right, min, max);
             }
             else if (n.key.compareTo(max) > 0)
-                return count(n.left, min, max, counter);
+                sizeH(n.left, min, max);
             else if (n.key.compareTo(min) < 0)
-                return count(n.right, min, max, counter);
-
-            return counter;
+                sizeH(n.right, min, max);
         }
-       // else {
-
-     //   }
-        return 0;
     }
 
     public Key select(int n) {
-       Treap<Key, Value> copy = new Treap<>();
+      /* Treap<Key, Value> copy = new Treap<>();
 
         copy = shallowCopy();
 
         for (int i = 0; i < n; i++) {
             copy.deleteMin();
         }
-        return copy.min();
-        //int skipped = 0;
+        return copy.min();*/
+       /* selectR = 0;
+        selectKey = null;
+
+        selectH(this.root, n);
+        return selectKey;*/
+
+        if (n >= 0)
+            return selectH(this.root, n);
+        else return null;
     }
 
-   /* private Key selectH(Node current, int n, int skipped) {
-        if (n < getSize(current.left)+skipped) {
-            skipped += getSize(current.right);
-            return selectH(current.left, n, skipped);
+    private Key selectH(Node current, int n/*, int skipped*/) {
+        if (current == null)
+            return null;
+
+        int sizeL = getSize(current.left);
+       // int sizeR = getSize(current.right);
+
+        if (n < sizeL) {
+           // skipped = getSize(current.right);
+            return selectH(current.left, n);
         }
-        else if (n > getSize(current.left)+skipped) {
-            skipped += getSize(current.left);
-            return selectH(current.right, n, skipped);
+        else if (n > sizeL) {
+            return selectH(current.right, n-1-sizeL);
         }
         else {
             return current.key;
         }
+    }
+
+
+   /* private void selectH(Node current, int n) {
+
+        if (current == null || n < 0 || selectR > n) return;
+
+        selectH(current.left, n);
+
+//        System.out.println(current.key);
+
+        if (selectR == n) {
+            selectKey = current.key;
+            selectR++;
+            return;
+        }
+        selectR++;
+
+
+
+        selectH(current.right, n);
     }*/
 
     public void KeysH(Node n, Stack<Key> s) {
@@ -944,10 +557,10 @@ public class Treap<Key extends Comparable<Key>,Value> {
        // if (n == null || !(n.key.compareTo(min) >= 0 && n.key.compareTo(max) <= 0)) return;
 
         if (n == null) return;
-        if (n.key.compareTo(min) < 0 || n.key.compareTo(max) > 0) return;
 
         KeysH(n.left, s, min, max);
-        s.push(n.key);
+        if (n.key.compareTo(min) >= 0 && n.key.compareTo(max) <= 0)
+            s.push(n.key);
         KeysH(n.right, s, min, max);
 
     }
@@ -966,24 +579,37 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
         return s;
 
+    }
+
+    public void prioritiesH(Node n, Stack<Integer> s) {
+        if (n == null) return;
+
+        prioritiesH(n.left, s);
+        s.push(n.priority);
+        prioritiesH(n.right, s);
+
+    }
+
+    public void valuesH(Node n, Stack<Value> s) {
+        if (n == null) return;
+
+        valuesH(n.left, s);
+        s.push(n.value);
+        valuesH(n.right, s);
 
     }
 
 
     public Iterable<Integer> priorities() {
-        Stack<Integer> stack = new Stack<Integer>();
-        for (Key k: keys())
-            stack.push(getPr(k));
-
-        return stack;
+        Stack<Integer> s =  new Stack<Integer>();
+        prioritiesH(this.root, s);
+        return s;
     }
 
     public Iterable<Value> values() {
-        Stack<Value> stack = new Stack<Value>();
-        for (Key k: keys())
-            stack.push(get(k));
-
-        return stack;
+        Stack<Value> s =  new Stack<Value>();
+        valuesH(this.root, s);
+        return s;
     }
 
     //if you want to use a different organization that a set of nodes with pointers, you can do it, but you will have to change
@@ -1073,7 +699,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         treap.put(1, 20);
 
         treap.put(30, 10);
-        /*treap.put(-1, 0);
+        treap.put(-1, 0);
         treap.put(-30, 0);
         treap.put(25, 0);
 
@@ -1081,7 +707,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
         treap.put(70, 1);
         treap.put(-2, 0);
-        treap.put(-10, 0);*/
+        treap.put(-10, 0);
 
 
 
@@ -1096,28 +722,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         System.out.println();
 
 
-//        System.out.println(treap.select(18));
-
-
-  //      Treap[] treaps = treap.split(25);
-
-//        treaps[0].printTreapBeginning();
-
-
-
-        //   System.out.println(treap.get(30));
-
-       // System.out.println(treap.rank(15));
-        System.out.println("size:");
-        //System.out.println(treap.size(-31, 30));
-
-
-        for (Integer k : treap.keys(0, 30)) {
-            System.out.println(k);
-        }
-
-        Treap<Integer, Integer> copy = treap.shallowCopy();
-
+        System.out.println(treap.select(100));
     }
 
 }
