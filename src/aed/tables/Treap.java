@@ -931,52 +931,42 @@ public class Treap<Key extends Comparable<Key>,Value> {
         }
     }*/
 
-    public Iterable<Key> keys(Key min, Key max) {
-        /*MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
-        keysH(root, min, max, pq);
-        return pq;*/
-        //inOrder(this.root);
-        return null;
-    }
+    public void KeysH(Node n, Stack<Key> s) {
+        if (n == null) return;
 
-    public void inOrder(Node n) {
-        if (n == null)
-            return;
-
-        inOrder(n.left);
-        System.out.println(n.key);
-        inOrder(n.right);
+        KeysH(n.left, s);
+        s.push(n.key);
+        KeysH(n.right, s);
 
     }
 
-    private void keysH(Node n, Key min, Key max, MinPriorityQueue<Key> res) {
-        if (n == null)
-            return;
-        if (n.key.compareTo(max) > 0)
-            keysH(n.left, min, max, res);
-        if (min.compareTo(n.key) <= 0 && n.key.compareTo(max) <= 0) {
-            res.insert(n.key);
-            keysH(n.left, min, max, res);
-            keysH(n.right, min, max, res);
-        }
-        if (n.key.compareTo(min) < 0)
-            keysH(n.right, min, max, res);
+    public void KeysH(Node n, Stack<Key> s, Key min, Key max) {
+       // if (n == null || !(n.key.compareTo(min) >= 0 && n.key.compareTo(max) <= 0)) return;
+
+        if (n == null) return;
+        if (n.key.compareTo(min) < 0 || n.key.compareTo(max) > 0) return;
+
+        KeysH(n.left, s, min, max);
+        s.push(n.key);
+        KeysH(n.right, s, min, max);
+
     }
 
-    private void keysH(Node n, MinPriorityQueue<Key> res) {
-        if (n == null)
-            return;
-        else {
-            res.insert(n.key);
-            keysH(n.left,res);
-            keysH(n.right,res);
-        }
-    }
 
     public Iterable<Key> keys() {
-        MinPriorityQueue<Key> pq = new MinPriorityQueue<Key>();
-        keysH(root, pq);
-        return pq;
+        Stack<Key> s =  new Stack<Key>();
+        KeysH(this.root, s);
+
+        return s;
+    }
+
+    public Iterable<Key> keys(Key min, Key max) {
+         Stack<Key> s =  new Stack<Key>();
+        KeysH(this.root, s, min, max);
+
+        return s;
+
+
     }
 
 
@@ -1083,7 +1073,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
         treap.put(1, 20);
 
         treap.put(30, 10);
-        treap.put(-1, 0);
+        /*treap.put(-1, 0);
         treap.put(-30, 0);
         treap.put(25, 0);
 
@@ -1091,7 +1081,7 @@ public class Treap<Key extends Comparable<Key>,Value> {
 
         treap.put(70, 1);
         treap.put(-2, 0);
-        treap.put(-10, 0);
+        treap.put(-10, 0);*/
 
 
 
@@ -1121,7 +1111,10 @@ public class Treap<Key extends Comparable<Key>,Value> {
         System.out.println("size:");
         //System.out.println(treap.size(-31, 30));
 
-        treap.inOrder(treap.root);
+
+        for (Integer k : treap.keys(0, 30)) {
+            System.out.println(k);
+        }
 
         Treap<Integer, Integer> copy = treap.shallowCopy();
 
